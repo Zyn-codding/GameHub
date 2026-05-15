@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Game Hub - 5 in 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: #0a0a1a;
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
+            border: 1px solid #2a2a4a;
+        }
+
+        .menu-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: #1e1e3a;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: 0.2s;
+        }
+        .menu-btn:hover { background: #3a3a5a; transform: scale(1.05); }
+        .menu-btn span { font-size: 28px; color: white; }
+
+        .dropdown {
+            position: absolute;
+            top: 65px;
+            right: 20px;
+            background: #15152a;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            z-index: 101;
+            display: none;
+            flex-direction: column;
+            min-width: 200px;
+            border: 1px solid #2a2a4a;
+        }
+        .dropdown a {
+            padding: 12px 20px;
+            color: #eee;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 1px solid #2a2a3a;
+        }
+        .dropdown a:last-child { border-bottom: none; }
+        .dropdown a:hover { background: #2a2a4a; }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #0a0a1a;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-right: 50px;
+            color: white;
+        }
+        .game-title {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff7b4a, #ff4d4d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .score-box {
+            background: #1e1e3a;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: bold;
+        }
+        .restart-btn, .mode-toggle {
+            background: #2a2a4a;
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .restart-btn:hover, .mode-toggle:hover { background: #3a3a6a; }
+        .controls {
+            text-align: center;
+            margin-top: 15px;
+            color: #aaa;
+            font-size: 12px;
+        }
+        .quiz-area, .tebak-area {
+            background: #0a0a1a;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            min-width: 400px;
+        }
+        .quiz-question { font-size: 20px; margin-bottom: 20px; }
+        .quiz-options button, .tebak-input button {
+            background: #2a2a4a;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .quiz-options button:hover { background: #4a4a7a; }
+        .tebak-input input {
+            padding: 10px;
+            border-radius: 30px;
+            border: none;
+            margin: 10px;
+            width: 120px;
+            text-align: center;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="menu-btn" id="menuBtn"><span>⋮</span></div>
+    <div class="dropdown" id="dropdown">
+        <a data-game="tictactoe">🎮 Tic Tac Toe (PvBot/PvP)</a>
+        <a data-game="snake">🐍 Snake</a>
+        <a data-game="tebak">🔢 Tebak Angka</a>
+        <a data-game="quiz">❓ Quiz Interaktif</a>
+        <a data-game="flappy">🕊️ Flappy Bird</a>
+    </div>
+
+    <div class="game-header">
+        <div class="game-title" id="gameTitle">Tic Tac Toe</div>
+        <div>
+            <span class="score-box" id="scoreDisplay">Skor: 0</span>
+            <button class="mode-toggle" id="modeToggleBtn" style="display: none;">Mode: PvBot</button>
+            <button class="restart-btn" id="restartBtn">⟳ Restart</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div id="tebakUI" class="tebak-area hidden">
+        <p>Tebak angka antara 1 - 100</p>
+        <p id="tebakMessage">Masukkan tebakanmu</p>
+        <div class="tebak-input">
+            <input type="number" id="tebakInput" placeholder="Angka">
+            <button id="tebakSubmit">Tebak!</button>
+        </div>
+        <p id="tebakHint"></p>
+    </div>
+
+    <div id="quizUI" class="quiz-area hidden">
+        <div class="quiz-question" id="quizQuestion"></div>
+        <div class="quiz-options" id="quizOptions"></div>
+        <p id="quizResult" style="margin-top: 15px;"></p>
+    </div>
+
+    <div class="controls" id="controlsInfo">Klik kotak untuk main X (PvBot)</div>
+</div>
+
+<script>
+    let currentGame = 'tictactoe';
+    let tttMode = 'pvb'; // pvb = Player vs Bot, pvp = Player vs Player
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameTitle = document.getElementById('gameTitle');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const controlsInfo = document.getElementById('controlsInfo');
+    const modeToggleBtn = document.getElementById('modeToggleBtn');
+    const tebakUI = document.getElementById('tebakUI');
+    const quizUI = document.getElementById('quizUI');
+
+    // TIC TAC TOE
+    let tttBoard = ['', '', '', '', '', '', '', '', ''];
+    let tttTurn = 'X';
+    let tttWinner = null;
+    let tttGameOver = false;
+
+    // SNAKE
+    let snake = [[6,6], [5,6], [4,6]];
+    let snakeDir = 'RIGHT';
+    let snakeNextDir = 'RIGHT';
+    let snakeFood = [15,10];
+    let snakeScore = 0;
+    let snakeGameOver = false;
+    let snakeLoop = null;
+
+    // FLAPPY
+    let birdY = 200;
+    let birdVel = 0;
+    let flappyPipes = [];
+    let flappyScore = 0;
+    let flappyGameOver = false;
+    let flappyLoop = null;
+    const pipeGap = 100;
+    const pipeWidth = 50;
+
+    // TEBAK ANGKA
+    let tebakNumber = 0;
+    let tebakAttempts = 0;
+
+    // QUIZ DATA (GAMPANG NAMBAHNYA, TAMBAH AJA DI BAWAH)
+    const quizData = [
+        { question: "Apa ibu kota Indonesia?", options: ["Bandung", "Surabaya", "Jakarta", "Medan"], answer: 2 },
+        { question: "Siapa presiden pertama Indonesia?", options: ["Soeharto", "Soekarno", "Habibie", "Gus Dur"], answer: 1 },
+        { question: "Planet terdekat dari matahari?", options: ["Venus", "Bumi", "Mars", "Merkurius"], answer: 3 },
+        { question: "Hewan apa yang bisa terbang?", options: ["Kucing", "Anjing", "Burung", "Ikan"], answer: 2 },
+        { question: "Warna bendera Indonesia?", options: ["Merah Putih", "Biru Putih", "Hijau Kuning", "Hitam Merah"], answer: 0 },
+        { question: "Siapakah penemu lampu pijar?", options: ["Einstein", "Tesla", "Edison", "Newton"], answer: 2 },
+        { question: "Apa bahasa pemrograman terpopuler 2024?", options: ["Python", "Java", "C++", "JavaScript"], answer: 0 }
+    ];
+    let quizIndex = 0;
+    let quizScore = 0;
+
+    function setGame(game) {
+        stopAllIntervals();
+        currentGame = game;
+        canvas.classList.remove('hidden');
+        tebakUI.classList.add('hidden');
+        quizUI.classList.add('hidden');
+        modeToggleBtn.style.display = 'none';
+
+        if (game === 'tictactoe') {
+            gameTitle.innerText = 'Tic Tac Toe';
+            controlsInfo.innerText = 'Klik kotak | Mode: PvBot / PvP';
+            canvas.width = 400; canvas.height = 400;
+            modeToggleBtn.style.display = 'inline-block';
+            modeToggleBtn.innerText = tttMode === 'pvb' ? 'Mode: PvBot' : 'Mode: PvP';
+            resetTicTacToe();
+            drawTicTacToe();
+        } else if (game === 'snake') {
+            gameTitle.innerText = 'Snake';
+            controlsInfo.innerText = '⬆️ ⬇️ ⬅️ ➡️  |  Spasi Restart';
+            canvas.width = 400; canvas.height = 400;
+            resetSnake();
+            drawSnake();
+            snakeLoop = setInterval(updateSnake, 120);
+        } else if (game === 'flappy') {
+            gameTitle.innerText = 'Flappy Bird';
+            controlsInfo.innerText = 'Klik / Spasi terbang | R Restart';
+            canvas.width = 400; canvas.height = 400;
+            resetFlappy();
+            drawFlappy();
+            flappyLoop = setInterval(updateFlappy, 25);
+        } else if (game === 'tebak') {
+            gameTitle.innerText = 'Tebak Angka';
+            controlsInfo.innerText = 'Tebak angka 1-100';
+            canvas.classList.add('hidden');
+            tebakUI.classList.remove('hidden');
+            resetTebak();
+        } else if (game === 'quiz') {
+            gameTitle.innerText = 'Quiz Interaktif';
+            controlsInfo.innerText = 'Pilih jawaban yang benar';
+            canvas.classList.add('hidden');
+            quizUI.classList.remove('hidden');
+            resetQuiz();
+        }
+        updateScoreDisplay();
+    }
+
+    function stopAllIntervals() {
+        if (snakeLoop) clearInterval(snakeLoop);
+        if (flappyLoop) clearInterval(flappyLoop);
+    }
+
+    function resetTicTacToe() {
+        tttBoard = ['', '', '', '', '', '', '', '', ''];
+        tttTurn = 'X';
+        tttWinner = null;
+        tttGameOver = false;
+        drawTicTacToe();
+    }
+
+    function resetSnake() {
+        snake = [[6,6], [5,6], [4,6]];
+        snakeDir = 'RIGHT';
+        snakeNextDir = 'RIGHT';
+        snakeScore = 0;
+        snakeGameOver = false;
+        generateRandomFood();
+        updateScoreDisplay();
+        drawSnake();
+    }
+
+    function resetFlappy() {
+        birdY = 200;
+        birdVel = 0;
+        flappyPipes = [];
+        flappyScore = 0;
+        flappyGameOver = false;
+        generatePipe();
+        updateScoreDisplay();
+        drawFlappy();
+    }
+
+    function resetTebak() {
+        tebakNumber = Math.floor(Math.random() * 100) + 1;
+        tebakAttempts = 0;
+        document.getElementById('tebakMessage').innerText = 'Tebak angka 1-100!';
+        document.getElementById('tebakHint').innerHTML = '';
+        document.getElementById('tebakInput').value = '';
+        updateScoreDisplay();
+    }
+
+    function resetQuiz() {
+        quizIndex = 0;
+        quizScore = 0;
+        loadQuizQuestion();
+        updateScoreDisplay();
+    }
+
+    function generateRandomFood() {
+        do {
+            snakeFood = [Math.floor(Math.random() * 20), Math.floor(Math.random() * 20)];
+        } while (snake.some(seg => seg[0] === snakeFood[0] && seg[1] === snakeFood[1]));
+    }
+
+    function generatePipe() {
+        let pipeHeight = Math.floor(Math.random() * (canvas.height - pipeGap - 60)) + 30;
+        flappyPipes.push({ x: canvas.width, topHeight: pipeHeight, bottomY: pipeHeight + pipeGap, passed: false });
+    }
+
+    function drawTicTacToe() {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        for (let i = 1; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * 133.33, 0); ctx.lineTo(i * 133.33, 400); ctx.stroke();
+            ctx.moveTo(0, i * 133.33); ctx.lineTo(400, i * 133.33); ctx.stroke();
+        }
+        ctx.font = 'bold 50px Arial';
+        ctx.fillStyle = '#ffaa66';
+        for (let i = 0; i < 9; i++) {
+            let x = (i % 3) * 133.33 + 66;
+            let y = Math.floor(i / 3) * 133.33 + 90;
+            if (tttBoard[i] !== '') ctx.fillText(tttBoard[i], x, y);
+        }
+        if (tttWinner) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 0, 400, 400);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText(`${tttWinner} WIN!`, 140, 200);
+        } else if (!tttBoard.includes('') && !tttWinner) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 0, 400, 400);
+            ctx.fillStyle = '#ffaa66';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('DRAW', 160, 200);
+        }
+    }
+
+    function drawSnake() {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(snakeFood[0]*20, snakeFood[1]*20, 18, 18);
+        ctx.fillStyle = '#0f0';
+        snake.forEach(seg => ctx.fillRect(seg[0]*20, seg[1]*20, 18, 18));
+        if (snakeGameOver) {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 0, 400, 400);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('GAME OVER', 130, 200);
+        }
+    }
+
+    function drawFlappy() {
+        ctx.fillStyle = '#1a6d8f';
+        ctx.fillRect(0, 0, 400, 400);
+        ctx.fillStyle = '#2d6a4f';
+        flappyPipes.forEach(pipe => {
+            ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+            ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+        });
+        ctx.fillStyle = '#f4a261';
+        ctx.fillRect(60, birdY-15, 30, 25);
+        if (flappyGameOver) {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, 0, 400, 400);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('GAME OVER', 130, 200);
+        }
+    }
+
+    function updateSnake() {
+        if (snakeGameOver || currentGame !== 'snake') return;
+        snakeDir = snakeNextDir;
+        let newHead = [...snake[0]];
+        if (snakeDir === 'RIGHT') newHead[0]++;
+        if (snakeDir === 'LEFT') newHead[0]--;
+        if (snakeDir === 'UP') newHead[1]--;
+        if (snakeDir === 'DOWN') newHead[1]++;
+
+        if (newHead[0] < 0 || newHead[0] >= 20 || newHead[1] < 0 || newHead[1] >= 20 || 
+            snake.some(seg => seg[0] === newHead[0] && seg[1] === newHead[1])) {
+            snakeGameOver = true;
+            drawSnake();
+            return;
+        }
+
+        snake.unshift(newHead);
+        if (newHead[0] === snakeFood[0] && newHead[1] === snakeFood[1]) {
+            snakeScore++;
+            updateScoreDisplay();
+            generateRandomFood();
+        } else {
+            snake.pop();
+        }
+        drawSnake();
+    }
+
+    function updateFlappy() {
+        if (flappyGameOver || currentGame !== 'flappy') return;
+        birdVel += 0.8;
+        birdY += birdVel;
+        if (birdY > canvas.height - 20 || birdY < 0) flappyGameOver = true;
+
+        for (let i=0; i<flappyPipes.length; i++) {
+            flappyPipes[i].x -= 3;
+            if (!flappyPipes[i].passed && flappyPipes[i].x + pipeWidth < 60) {
+                flappyPipes[i].passed = true;
+                flappyScore++;
+                updateScoreDisplay();
+            }
+            if (flappyPipes[i].x + pipeWidth < 0) flappyPipes.splice(i,1);
+        }
+        if (flappyPipes.length === 0 || flappyPipes[flappyPipes.length-1].x < canvas.width - 150) generatePipe();
+
+        for (let pipe of flappyPipes) {
+            if (60+30 > pipe.x && 60 < pipe.x+pipeWidth) {
+                if (birdY-15 < pipe.topHeight || birdY+10 > pipe.bottomY) flappyGameOver = true;
+            }
+        }
+        drawFlappy();
+    }
+
+    function loadQuizQuestion() {
+        if (quizIndex >= quizData.length) {
+            document.getElementById('quizQuestion').innerText = `Quiz Selesai! Skor akhir: ${quizScore}/${quizData.length}`;
+            document.getElementById('quizOptions').innerHTML = '';
+            document.getElementById('quizResult').innerHTML = '<button onclick="resetQuiz()" class="restart-btn">Main Lagi</button>';
+            return;
+        }
+        let q = quizData[quizIndex];
+        document.getElementById('quizQuestion').innerText = q.question;
+        let btns = '';
+        q.options.forEach((opt, idx) => {
+            btns += `<button onclick="answerQuiz(${idx})">${opt}</button>`;
+        });
+        document.getElementById('quizOptions').innerHTML = btns;
+        document.getElementById('quizResult').innerHTML = '';
+    }
+
+    function answerQuiz(selected) {
+        if (quizIndex >= quizData.length) return;
+        let correct = quizData[quizIndex].answer;
+        if (selected === correct) {
+            quizScore++;
+            document.getElementById('quizResult').innerHTML = '<span style="color:lightgreen;">✅ Benar!</span>';
+        } else {
+            document.getElementById('quizResult').innerHTML = `<span style="color:#ffaaaa;">❌ Salah! Jawaban: ${quizData[quizIndex].options[correct]}</span>`;
+        }
+        quizIndex++;
+        updateScoreDisplay();
+        setTimeout(loadQuizQuestion, 1000);
+    }
+
+    function updateScoreDisplay() {
+        if (currentGame === 'snake') scoreDisplay.innerText = `Skor: ${snakeScore}`;
+        else if (currentGame === 'flappy') scoreDisplay.innerText = `Skor: ${flappyScore}`;
+        else if (currentGame === 'quiz') scoreDisplay.innerText = `Skor: ${quizScore}/${quizData.length}`;
+        else scoreDisplay.innerText = 'Skor: 0';
+    }
+
+    // EVENT HANDLER
+    canvas.addEventListener('click', (e) => {
+        if (currentGame === 'tictactoe' && !tttWinner && !tttGameOver) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            const col = Math.floor(x / 133.33);
+            const row = Math.floor(y / 133.33);
+            const idx = row * 3 + col;
+            if (tttBoard[idx] === '') {
+                tttBoard[idx] = tttTurn;
+                let win = checkWin(tttBoard);
+                if (win) { tttWinner = tttTurn; drawTicTacToe(); return; }
+                if (!tttBoard.includes('')) { drawTicTacToe(); return; }
+                tttTurn = (tttTurn === 'X') ? 'O' : 'X';
+                drawTicTacToe();
+
+                if (tttMode === 'pvb' && tttTurn === 'O' && !tttWinner) {
+                    setTimeout(botMove, 300);
+                }
+            }
+        }
+    });
+
+    function botMove() {
+        if (tttWinner || tttGameOver) return;
+        let empty = [];
+        for (let i=0; i<9; i++) if (tttBoard[i] === '') empty.push(i);
+        if (empty.length > 0) {
+            let move = empty[Math.floor(Math.random() * empty.length)];
+            tttBoard[move] = 'O';
+            let win = checkWin(tttBoard);
+            if (win) { tttWinner = 'O'; drawTicTacToe(); return; }
+            if (!tttBoard.includes('')) { drawTicTacToe(); return; }
+            tttTurn = 'X';
+            drawTicTacToe();
+        }
+    }
+
+    function checkWin(board) {
+        const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        for (let w of wins) {
+            if (board[w[0]] && board[w[0]] === board[w[1]] && board[w[1]] === board[w[2]]) return true;
+        }
+        return false;
+  
